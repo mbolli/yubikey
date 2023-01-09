@@ -1,59 +1,61 @@
 <?php
+
 namespace Yubikey;
 
 class Client
 {
     /**
-     * Send the request(s) via curl
+     * Send the request(s) via curl.
      *
-     * @param  array|\Yukikey\RequestCollection $requests Set of \Yubikey\Request objects
-     * @return \Yubikey\ResponseCollection instance
+     * @param array|RequestCollection $requests Set of \Yubikey\Request objects
+     *
+     * @return ResponseCollection instance
      */
     public function send($requests)
     {
-        if (get_class($requests) !== 'Yubikey\\RequestCollection') {
-            $requests = new \Yubikey\RequestCollection($requests);
+        if ($requests::class !== RequestCollection::class) {
+            $requests = new RequestCollection($requests);
         }
 
-        $responses = $this->request($requests);
-        return $responses;
+        return $this->request($requests);
     }
 
     /**
-     * Make the request given the Request set and content
+     * Make the request given the Request set and content.
      *
-     * @param \Yubikey\RequestCollection $requests Request collection
-     * @return \Yubikey\ResponseCollection instance
+     * @param RequestCollection $requests Request collection
+     *
+     * @return ResponseCollection instance
      */
-    public function request(\Yubikey\RequestCollection $requests)
+    public function request(RequestCollection $requests)
     {
-        $responses = new \Yubikey\ResponseCollection();
+        $responses = new ResponseCollection();
         $startTime = microtime(true);
         $multi = curl_multi_init();
-        $curls = array();
+        $curls = [];
 
         foreach ($requests as $index => $request) {
             $curls[$index] = curl_init();
-            curl_setopt_array($curls[$index], array(
+            curl_setopt_array($curls[$index], [
                 CURLOPT_URL => $request->getUrl(),
                 CURLOPT_HEADER => 0,
-                CURLOPT_RETURNTRANSFER => 1
-            ));
+                CURLOPT_RETURNTRANSFER => 1,
+            ]);
             curl_multi_add_handle($multi, $curls[$index]);
         }
 
         do {
-            while ((curl_multi_exec($multi, $active)) == CURLM_CALL_MULTI_PERFORM);
+            while (curl_multi_exec($multi, $active) === CURLM_CALL_MULTI_PERFORM);
             while ($info = curl_multi_info_read($multi)) {
-                if ($info['result'] == CURLE_OK) {
+                if ($info['result'] === CURLE_OK) {
                     $return = curl_multi_getcontent($info['handle']);
                     $cinfo = curl_getinfo($info['handle']);
                     $url = parse_url($cinfo['url']);
 
-                    $response = new \Yubikey\Response(array(
+                    $response = new Response([
                         'host' => $url['host'],
-                        'mt' => (microtime(true)-$startTime)
-                    ));
+                        'mt' => (microtime(true) - $startTime),
+                    ]);
                     $response->parse($return);
                     $responses->add($response);
                 }

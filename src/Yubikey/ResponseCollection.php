@@ -5,23 +5,21 @@ namespace Yubikey;
 class ResponseCollection implements \Countable, \Iterator, \ArrayAccess
 {
     /**
-     * Set of \Yubikey\Response objects
-     * @var array
+     * Set of \Yubikey\Response objects.
      */
-    private $responses = array();
+    private array $responses = [];
 
     /**
-     * Position in the data set (for Iterator)
-     * @var integer
+     * Position in the data set (for Iterator).
      */
-    private $position = 0;
+    private int $position = 0;
 
     /**
-     * Init the object and set the Response objects if provided
+     * Init the object and set the Response objects if provided.
      *
      * @param array $responses Response object set
      */
-    public function __construct(array $responses = array())
+    public function __construct(array $responses = [])
     {
         if (!empty($responses)) {
             foreach ($responses as $response) {
@@ -32,150 +30,144 @@ class ResponseCollection implements \Countable, \Iterator, \ArrayAccess
 
     /**
      * Determine, based on the Response status (success)
-     *     if the overall operation was successful
+     *     if the overall operation was successful.
      *
-     * @return boolean Success/fail status
+     * @param mixed $first
+     *
+     * @return bool Success/fail status
      */
     public function success($first = false)
     {
         $success = false;
         if ($first === true) {
             // Sort them by timestamp, pop the first one and return pass/fail
-            usort($this->responses, function(\Yubikey\Response $r1, \Yubikey\Response $r2) {
-                return $r1->getMt() > $r2->getMt();
-            });
+            usort($this->responses, fn (\Yubikey\Response $r1, \Yubikey\Response $r2) => $r1->getMt() > $r2->getMt());
             $response = $this->responses[0];
+
             return $response->success();
-        } else {
-            foreach ($this->responses as $response) {
-                if ($response->success() === false
-                    && $response->status !== Response::REPLAY_REQUEST) {
-                    return false;
-                } elseif ($response->success()) {
-                    $success = true;
-                }
+        }
+        foreach ($this->responses as $response) {
+            if ($response->success() === false
+                && $response->status !== Response::REPLAY_REQUEST) {
+                return false;
+            }
+            if ($response->success()) {
+                $success = true;
             }
         }
+
         return $success;
     }
 
     /**
-     * Add a new Response object to the set
+     * Add a new Response object to the set.
      *
      * @param \Yubikey\Response $response Response object
      */
-    public function add(\Yubikey\Response $response)
+    public function add(Response $response): void
     {
         $this->responses[] = $response;
     }
 
-        /**
-     * For Countable
+    /**
+     * For Countable.
      *
-     * @return integer Count of current Requests
+     * @return int Count of current Requests
      */
-    #[\ReturnTypeWillChange]
-    public function count()
+    public function count(): int
     {
-        return count($this->responses);
+        return \count($this->responses);
     }
 
     /**
-     * For Iterator
+     * For Iterator.
      *
-     * @return Current Request object
+     * @return Response Current Request object
      */
-    #[\ReturnTypeWillChange]
-    public function current()
+    public function current(): Response
     {
         return $this->responses[$this->position];
     }
 
     /**
-     * For Iterator
+     * For Iterator.
      *
-     * @return integer Current position in set
+     * @return int Current position in set
      */
-    #[\ReturnTypeWillChange]
-    public function key()
+    public function key(): int
     {
         return $this->position;
     }
 
     /**
-     * For Iterator
+     * For Iterator.
      *
-     * @return integer Next positiion in set
+     * @return int Next positiion in set
      */
-    #[\ReturnTypeWillChange]
-    public function next()
+    public function next(): int
     {
         return ++$this->position;
     }
 
     /**
-     * For Iterator, rewind set location to beginning
+     * For Iterator, rewind set location to beginning.
      */
-    #[\ReturnTypeWillChange]
-    public function rewind()
+    public function rewind(): void
     {
         $this->position = 0;
     }
 
     /**
-     * For Iterator, check to see if set item is valid
+     * For Iterator, check to see if set item is valid.
      *
-     * @return boolean Valid/invalid result
+     * @return bool Valid/invalid result
      */
-    #[\ReturnTypeWillChange]
-    public function valid()
+    public function valid(): bool
     {
         return isset($this->responses[$this->position]);
     }
 
     /**
-     * For ArrayAccess
+     * For ArrayAccess.
      *
      * @param mixed $offset Offset identifier
-     * @return boolean Found/not found result
+     *
+     * @return bool Found/not found result
      */
-    #[\ReturnTypeWillChange]
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
-        return (isset($this->responses[$offset]));
+        return isset($this->responses[$offset]);
     }
 
     /**
-     * For ArrayAccess
+     * For ArrayAccess.
      *
      * @param mixed $offset Offset to locate
+     *
      * @return \Yubikey\Request object if found
      */
-    #[\ReturnTypeWillChange]
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->responses[$offset];
     }
 
     /**
-     * For ArrayAccess
+     * For ArrayAccess.
      *
      * @param mixed $offset Offset to use in data set
-     * @param mixed $data Data to assign
+     * @param mixed $data   Data to assign
      */
-    #[\ReturnTypeWillChange]
-    public function offsetSet($offset, $data)
+    public function offsetSet(mixed $offset, mixed $data): void
     {
         $this->responses[$offset] = $data;
     }
 
     /**
-     * For ArrayAccess
+     * For ArrayAccess.
      *
      * @param mixed $offset Offset to remove
      */
-    #[\ReturnTypeWillChange]
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
         unset($this->responses[$offset]);
     }

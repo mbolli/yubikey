@@ -5,64 +5,59 @@ namespace Yubikey;
 class Validate
 {
     /**
-     * Yubico API hosts
-     * @var array
+     * Yubico API hosts.
      */
-    private $hosts = array(
+    private array $hosts = [
         'api.yubico.com',
         'api2.yubico.com',
         'api3.yubico.com',
         'api4.yubico.com',
-        'api5.yubico.com'
-    );
+        'api5.yubico.com',
+    ];
 
     /**
-     * Selected hosted for request
-     * @var string
+     * Selected hosted for request.
      */
-    private $host = null;
+    private ?string $host = null;
 
     /**
-     * API given for request
-     * @var string
+     * API given for request.
      */
-    private $apiKey = null;
+    private ?string $apiKey = null;
 
     /**
-     * Use a secure/insecure connection (HTTPS vs HTTP)
-     * @var boolean
+     * Use a secure/insecure connection (HTTPS vs HTTP).
      */
-    private $useSecure = true;
+    private bool $useSecure = true;
 
     /**
-     * OTP provided by user
-     * @var string
+     * OTP provided by user.
      */
-    private $otp = null;
+    private ?string $otp = null;
 
     /**
-     * Yubikey ID, to identify a connected user
-     * @var string
+     * Yubikey ID, to identify a connected user.
      */
-    private $yubikeyid = null;
-    private $clientId = null;
+    private ?string $yubikeyid = null;
+    private ?int $clientId = null;
 
     /**
-     * Init the object and set the API key, Client ID and optionally hosts
+     * Init the object and set the API key, Client ID and optionally hosts.
      *
-     * @param string $apiKey API Key
-     * @param string $clientId Client ID
-     * @param array $hosts Set of hostnames (overwrites current)
+     * @param string     $apiKey   API Key
+     * @param int|string $clientId Client ID
+     * @param array      $hosts    Set of hostnames (overwrites current)
+     *
      * @throws \DomainException If curl is not enabled
      */
-    public function __construct($apiKey, $clientId, array $hosts = array())
+    public function __construct(string $apiKey, int|string $clientId, array $hosts = [])
     {
         if ($this->checkCurlSupport() === false) {
             throw new \DomainException('cURL support is required and is not enabled!');
         }
 
         $this->setApiKey($apiKey);
-        $this->setClientId($clientId);
+        $this->setClientId((int) $clientId);
 
         if (!empty($hosts)) {
             $this->setHosts($hosts);
@@ -70,31 +65,31 @@ class Validate
     }
 
     /**
-     * Check for enabled curl support (requirement)
+     * Check for enabled curl support (requirement).
      *
-     * @return boolean Enabled/not found flag
+     * @return bool Enabled/not found flag
      */
-    public function checkCurlSupport()
+    public function checkCurlSupport(): bool
     {
-        return (function_exists('curl_init'));
+        return \function_exists('curl_init');
     }
 
     /**
-     * Get the currently set API key
+     * Get the currently set API key.
      *
-     * @return string API key
+     * @return null|string API key
      */
-    public function getApiKey($decoded = false)
+    public function getApiKey(?bool $decoded = false): ?string
     {
-        return ($decoded === false) ? $this->apiKey : base64_decode($this->apiKey);
+        return ($decoded === false) ? $this->apiKey : base64_decode($this->apiKey, true);
     }
 
     /**
-     * Set the API key
+     * Set the API key.
      *
      * @param string $apiKey API request key
      */
-    public function setApiKey($apiKey)
+    public function setApiKey(string $apiKey): self
     {
         $key = base64_decode($apiKey, true);
         if ($key === false) {
@@ -102,148 +97,158 @@ class Validate
         }
 
         $this->apiKey = $key;
+
         return $this;
     }
 
     /**
-     * Set the OTP for the request
+     * Set the OTP for the request.
      *
      * @param string $otp One-time password
      */
-    public function setOtp($otp)
+    public function setOtp(string $otp): self
     {
         $this->otp = $otp;
+
         return $this;
     }
 
     /**
-     * Get the currently set OTP
+     * Get the currently set OTP.
      *
      * @return string One-time password
      */
-    public function getOtp()
+    public function getOtp(): string
     {
         return $this->otp;
     }
 
     /**
-     * Get the current Client ID
+     * Get the current Client ID.
      *
-     * @return integer Client ID
+     * @return null|int Client ID
      */
-    public function getClientId()
+    public function getClientId(): ?int
     {
         return $this->clientId;
     }
 
     /**
-     * Set the current Client ID
+     * Set the current Client ID.
      *
-     * @param integer $clientId Client ID
+     * @param int|string $clientId Client ID
      */
-    public function setClientId($clientId)
+    public function setClientId(string|int $clientId): self
     {
-        $this->clientId = $clientId;
+        $this->clientId = (int) $clientId;
+
         return $this;
     }
 
     /**
-     * Get the "use secure" setting
+     * Get the "use secure" setting.
      *
-     * @return boolean Use flag
+     * @return bool Use flag
      */
-    public function getUseSecure()
+    public function getUseSecure(): bool
     {
         return $this->useSecure;
     }
 
     /**
-     * Set the "use secure" setting
+     * Set the "use secure" setting.
      *
-     * @param boolean $use Use/don't use secure
+     * @param bool $use Use/don't use secure
+     *
      * @throws \InvalidArgumentException when value is not boolean
      */
-    public function setUseSecure($use)
+    public function setUseSecure(?bool $use = null): self
     {
-        if (!is_bool($use)) {
+        if (!\is_bool($use)) {
             throw new \InvalidArgumentException('"Use secure" value must be boolean');
         }
         $this->useSecure = $use;
+
         return $this;
     }
 
     /**
      * Get the host for the request
-     *     If one is not set, it returns a random one from the host set
+     *     If one is not set, it returns a random one from the host set.
      *
      * @return string Hostname string
      */
-    public function getHost()
+    public function getHost(): string
     {
         if ($this->host === null) {
             // pick a "random" host
-            $host = $this->hosts[mt_rand(0,count($this->hosts)-1)];
+            $host = $this->hosts[random_int(0, \count($this->hosts) - 1)];
             $this->setHost($host);
+
             return $host;
-        } else {
-            return $this->host;
         }
+
+        return $this->host;
     }
 
     /**
-     * Get the current hosts list
+     * Get the current hosts list.
      *
      * @return array Hosts list
      */
-    public function getHosts()
+    public function getHosts(): array
     {
         return $this->hosts;
     }
 
     /**
-     * Set the API host for the request
+     * Set the API host for the request.
      *
      * @param string $host Hostname
      */
-    public function setHost($host)
+    public function setHost(string $host): self
     {
         $this->host = $host;
+
         return $this;
     }
 
     /**
-     * Add a new host to the list
+     * Add a new host to the list.
      *
      * @param string $host Hostname to add
      */
-    public function addHost($host)
+    public function addHost(string $host): self
     {
         $this->hosts[] = $host;
+
         return $this;
     }
 
     /**
-     * Set the hosts to request results from
+     * Set the hosts to request results from.
      *
      * @param array $hosts Set of hostnames
      */
-    public function setHosts(array $hosts)
+    public function setHosts(array $hosts): void
     {
         $this->hosts = $hosts;
     }
 
     /**
-     * Geenrate the signature for the request values
+     * Geenrate the signature for the request values.
      *
      * @param array $data Data for request
+     *
+     * @return string Hashed request signature
+     *
      * @throws \InvalidArgumentException when API key is invalid
-     * @return Hashed request signature (string)
      */
-    public function generateSignature($data, $key = null)
+    public function generateSignature(array $data, ?string $key = null): string
     {
         if ($key === null) {
             $key = $this->getApiKey();
-            if ($key === null || empty($key)) {
+            if (empty($key)) {
                 throw new \InvalidArgumentException('Invalid API key!');
             }
         }
@@ -251,32 +256,34 @@ class Validate
         $query = http_build_query($data);
         $query = str_replace('%3A', ':', $query);
 
-        if (PHP_VERSION_ID >= 80200) {
-            $query = function_exists('mb_convert_encoding') ? mb_convert_encoding($query, 'UTF-8') : $query;
+        if (\PHP_VERSION_ID >= 80200) {
+            $query = \function_exists('mb_convert_encoding') ? mb_convert_encoding($query, 'UTF-8') : $query;
         } else {
             $query = utf8_encode($query);
         }
 
-        $hash = preg_replace(
-            '/\+/', '%2B',
+        return preg_replace(
+            '/\+/',
+            '%2B',
             // base64_encode(hash_hmac('sha1', http_build_query($data), $key, true))
             base64_encode(hash_hmac('sha1', $query, $key, true))
         );
-        return $hash;
     }
 
     /**
-     * Check the One-time Password with API request
+     * Check the One-time Password with API request.
      *
-     * @param string $otp One-time password
-     * @param integer $clientId Client ID for API
+     * @param string $otp   One-time password
+     * @param bool   $multi Client ID for API
+     *
+     * @return \Yubikey\ResponseCollection object
+     *
      * @throws \InvalidArgumentException when OTP length is invalid
-     * @return \Yubikey\Response object
      */
-    public function check($otp, $multi = false)
+    public function check(string $otp, ?bool $multi = false): ResponseCollection
     {
         $otp = trim($otp);
-        if (strlen($otp) < 32 || strlen($otp) > 48) {
+        if (\strlen($otp) < 32 || \strlen($otp) > 48) {
             throw new \InvalidArgumentException('Invalid OTP length');
         }
 
@@ -289,45 +296,42 @@ class Validate
         }
 
         $nonce = $this->generateNonce();
-        $params = array(
-            'id' => $clientId,
-            'otp' => $otp,
-            'nonce' => $nonce,
-            'timestamp' => '1'
-        );
+        $params = ['id' => $clientId, 'otp' => $otp, 'nonce' => $nonce, 'timestamp' => '1'];
         ksort($params);
 
         $url = '/wsapi/2.0/verify?'.http_build_query($params).'&h='.$this->generateSignature($params);
-        $hosts = ($multi === false) ? array(array_shift($this->hosts)) : $this->hosts;
+        $hosts = ($multi === false) ? [array_shift($this->hosts)] : $this->hosts;
 
         return $this->request($url, $hosts, $otp, $nonce);
     }
 
     /**
-     * Generate a good nonce for the request
+     * Generate a good nonce for the request.
      *
      * @return string Generated hash
      */
-    public function generateNonce()
+    public function generateNonce(): string
     {
-        if (function_exists('openssl_random_pseudo_bytes') === true) {
+        if (\function_exists('openssl_random_pseudo_bytes') === true) {
             $hash = md5(openssl_random_pseudo_bytes(32));
         } else {
-            $hash = md5(uniqid(mt_rand()));
+            $hash = md5(uniqid(random_int(0, mt_getrandmax())));
         }
+
         return $hash;
     }
 
     /**
-     * Make the request(s) to the Yubi server(s)
+     * Make the request(s) to the Yubi server(s).
      *
-     * @param string $url URL for request
-     * @param array $hosts Set of hosts to request
-     * @param string $otp One-time password string
+     * @param string $url   URL for request
+     * @param array  $hosts Set of hosts to request
+     * @param string $otp   One-time password string
      * @param string $nonce Generated nonce
+     *
      * @return array Set of responses
      */
-    public function request($url, array $hosts, $otp, $nonce)
+    public function request(string $url, array $hosts, string $otp, string $nonce): ResponseCollection
     {
         $client = new \Yubikey\Client();
         $pool = new \Yubikey\RequestCollection();
@@ -339,9 +343,9 @@ class Validate
             $pool->add(new \Yubikey\Request($link));
         }
         $responses = $client->send($pool);
-        $responseCount = count($responses);
+        $responseCount = \count($responses);
 
-        for ($i = 0; $i < $responseCount; $i++) {
+        for ($i = 0; $i < $responseCount; ++$i) {
             $responses[$i]->setInputOtp($otp)->setInputNonce($nonce);
 
             if ($this->validateResponseSignature($responses[$i]) === false) {
@@ -353,16 +357,17 @@ class Validate
     }
 
     /**
-     * Validate the signature on the response
+     * Validate the signature on the response.
      *
-     * @param  \Yubikey\Response $response Response instance
-     * @return boolean Pass/fail status of signature validation
+     * @param \Yubikey\Response $response Response instance
+     *
+     * @return bool Pass/fail status of signature validation
      */
-    public function validateResponseSignature(\Yubikey\Response $response)
+    public function validateResponseSignature(Response $response): bool
     {
-        $params = array();
+        $params = [];
         foreach ($response->getProperties() as $property) {
-            $value = $response->$property;
+            $value = $response->{$property};
             if ($value !== null) {
                 $params[$property] = $value;
             }
@@ -370,50 +375,33 @@ class Validate
         ksort($params);
 
         $signature = $this->generateSignature($params);
-        return $this->hash_equals($signature, $response->getHash(true));
+
+        return hash_equals($signature, $response->getHash(true));
     }
 
     /**
-     * Polyfill PHP 5.6.0's hash_equals() feature
+     * Extract the yubikey ID from the OTP.
      */
-    public function hash_equals($a, $b)
-    {
-        if (\function_exists('hash_equals')) {
-            return \hash_equals($a, $b);
-        }
-        if (\strlen($a) !== \strlen($b)) {
-            return false;
-        }
-        $res = 0;
-        $len = \strlen($a);
-        for ($i = 0; $i < $len; ++$i) {
-            $res |= \ord($a[$i]) ^ \ord($b[$i]);
-        }
-        return $res === 0;
-    }
-
-    /**
-     * Extract the yubikey ID from the OTP
-     */
-    public function setYubikeyId()
+    public function setYubikeyId(): self
     {
         $this->yubikeyid = substr($this->getOtp(), 0, -32);
+
         return $this;
     }
 
     /**
-     * Get the yubikey ID from the OTP
+     * Get the yubikey ID from the OTP.
      *
      * @param string Optional OTP to extract the ID from
      *
      * @return string Yubikey ID string
      */
-    public function getYubikeyId($otp = '')
+    public function getYubikeyId(?string $otp = '')
     {
-      if (!empty($otp)) {
-        return substr($otp, 0, -32);
-      }
+        if (!empty($otp)) {
+            return substr($otp, 0, -32);
+        }
 
-      return $this->yubikeyid;
+        return $this->yubikeyid;
     }
 }

@@ -3,7 +3,7 @@
 /**
  * You can request your API key from:
  * https://upgrade.yubico.com/getapikey/
- * 
+ *
  * Usage:
  * php test.php [OTP from the Yubikey]
  */
@@ -23,4 +23,3 @@ if (isset($_SERVER['argv'][1])) {
 } else {
     echo "No key value specified\n\n";
 }
-?>

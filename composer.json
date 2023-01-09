@@ -13,10 +13,23 @@
         }
     ],
     "require":{
-        "php":">=7.4"
+        "php":"^8.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "8.*"
+        "phpunit/phpunit": "^9.5",
+        "rector/rector": "^0.15.3",
+        "friendsofphp/php-cs-fixer": "^3.13"
+    },
+    "scripts": {
+        "rector-update": "rector --config=./.rector.php process src tests",
+        "lint-diff": "@fix --dry-run --diff",
+        "lint": "@fix --dry-run",
+        "fix": [
+            "@putenv PHP_CS_FIXER_IGNORE_ENV=1",
+            "php-cs-fixer fix src tests --ansi -v --config=./.php-cs-fixer.php"
+        ],
+        "test": "phpunit tests",
+        "test-logic": "@php test.php"
     },
     "autoload":{
         "psr-4":{

@@ -17,7 +17,7 @@ the codes created by the Yubikey.
 
 ### Installation
 
-Use the followng command to install the library via Composer:
+Use the following command to install the library via Composer:
 
 ```
 composer require enygma/yubikey
