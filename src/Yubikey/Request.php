@@ -17,7 +17,7 @@ class Request
     /**
      * Init the object and set the URL if given.
      *
-     * @param string|null $url URL to request
+     * @param null|string $url URL to request
      */
     public function __construct(?string $url = null)
     {
@@ -49,7 +49,7 @@ class Request
     /**
      * Get the current request URL location.
      *
-     * @return string|null URL location
+     * @return null|string URL location
      */
     public function getUrl(): ?string
     {

@@ -100,13 +100,11 @@ class ResponseCollection implements \Countable, \Iterator, \ArrayAccess
     }
 
     /**
-     * For Iterator.
-     *
-     * @return int Next positiion in set
+     * For Iterator, move forward to next element.
      */
-    public function next(): int
+    public function next(): void
     {
-        return ++$this->position;
+        ++$this->position;
     }
 
     /**
