@@ -45,6 +45,7 @@ class Validate
      * @var string
      */
     private $yubikeyid = null;
+    private $clientId = null;
 
     /**
      * Init the object and set the API key, Client ID and optionally hosts
@@ -248,7 +249,13 @@ class Validate
         }
 
         $query = http_build_query($data);
-        $query = utf8_encode(str_replace('%3A', ':', $query));
+        $query = str_replace('%3A', ':', $query);
+
+        if (PHP_VERSION_ID >= 80200) {
+            $query = function_exists('mb_convert_encoding') ? mb_convert_encoding($query, 'UTF-8') : $query;
+        } else {
+            $query = utf8_encode($query);
+        }
 
         $hash = preg_replace(
             '/\+/', '%2B',
